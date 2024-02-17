@@ -19,3 +19,5 @@ Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_do
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at <https://hexdocs.pm/rinha2>.
 
+
+profiling https://elixirforum.com/t/how-do-you-profile-an-entire-application/5117/5
