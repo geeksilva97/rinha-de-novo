@@ -1,6 +1,8 @@
 defmodule Rinha2.Client do
   use GenServer
 
+  require Logger
+
   @amount_txns_to_keep 10
 
   def start_link({client_id, limit}) do
@@ -13,6 +15,7 @@ defmodule Rinha2.Client do
 
   @spec init({client_id :: integer(), limit :: integer()}) :: {:ok, {balance :: integer(), limit :: integer(), latest_txns :: list()}}
   def init({client_id, limit}) do
+    Logger.info("start client #{inspect(process_identifier(client_id))} | #{inspect(node())} - #{inspect(Node.list())}")
     {:ok, {0, limit, []}}
   end
 
@@ -25,10 +28,10 @@ defmodule Rinha2.Client do
   end
 
   def summary(client_id) do
-    GenServer.call(process_identifier(client_id), {:summary, client_id})
+    GenServer.call(process_identifier(client_id), {:summary})
   end
 
-  def handle_call({:credit, client_id, payload}, _from, state = {balance, limit, latest_txns}) do
+  def handle_call({:credit, _client_id, payload}, _from, {balance, limit, latest_txns}) do
     transaction = payload_to_transaction(payload)
 
     new_list = case length(latest_txns) >= @amount_txns_to_keep do
@@ -41,7 +44,7 @@ defmodule Rinha2.Client do
     {:reply, {:ok, new_balance, limit}, {new_balance, limit, new_list}}
   end
 
-  def handle_call({:debit, client_id, payload}, _from, state = {balance, limit, latest_txns}) do
+  def handle_call({:debit, _client_id, payload}, _from, state = {balance, limit, latest_txns}) do
     new_balance = balance - payload["valor"]
 
     case new_balance < limit do
@@ -56,6 +59,10 @@ defmodule Rinha2.Client do
 
         {:reply, {:ok, new_balance, limit}, {new_balance, limit, new_list}}
     end
+  end
+
+  def handle_call({:summary}, _from, state = {balance, limit, latest_txns}) do
+    {:reply, {:ok, balance, limit, latest_txns}, state}
   end
 
   defp payload_to_transaction(payload) do

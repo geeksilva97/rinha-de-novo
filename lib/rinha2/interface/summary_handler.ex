@@ -1,6 +1,4 @@
 defmodule Rinha2.Interface.SummaryHandler do
-  require Logger
-
   def init(req, options) do
     method = :cowboy_req.method(req)
 
@@ -14,7 +12,20 @@ defmodule Rinha2.Interface.SummaryHandler do
 
     case client_id > 0 and client_id < 6 do
       true ->
-        :cowboy_req.reply(204, req)
+        {:ok, balance, limit, latest_txns} = Rinha2.Client.summary(client_id)
+
+        {:ok, encoded_result} = Jason.encode(%{
+          ultimas_transacoes: latest_txns,
+          saldo: %{
+          total: balance,
+          limite: -1*limit,
+          data_extrato: DateTime.utc_now()
+        }
+          })
+
+        :cowboy_req.reply(200, %{
+          <<"content-type">> => <<"application/json">>
+        }, encoded_result, req)
       false ->
         :cowboy_req.reply(404, req)
     end

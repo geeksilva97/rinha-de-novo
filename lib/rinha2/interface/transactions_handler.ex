@@ -1,6 +1,4 @@
 defmodule Rinha2.Interface.TransactionsHandler do
-  require Logger
-
   def init(req, options) do
     method = :cowboy_req.method(req)
 
@@ -18,7 +16,6 @@ defmodule Rinha2.Interface.TransactionsHandler do
       :valid ->
         case Jason.decode(body) do
           {:ok, payload = %{"tipo" => tipo}} ->
-            Logger.info("payload :: #{inspect(payload)}")
             validate_payload(payload, :handle_transaction, [tipo, payload |> Map.put("client_id", client_id), req], req)
           _ ->
             :cowboy_req.reply(422, req)
@@ -50,7 +47,6 @@ defmodule Rinha2.Interface.TransactionsHandler do
   end
 
   def handle_transaction("c", payload, req) do
-    Logger.info("handle_transaction is being valled")
     {:ok, balance, limit} = Rinha2.Client.credit(payload["client_id"], payload)
 
     :cowboy_req.reply(200, %{
@@ -59,9 +55,17 @@ defmodule Rinha2.Interface.TransactionsHandler do
   end
 
   def handle_transaction("d", payload, req) do
-    :cowboy_req.reply(200, %{
-      <<"content-type">> => <<"application/json">>
-        }, <<"{\"limite\":0,\"saldo\":0}">>, req)
+
+      case Rinha2.Client.debit(payload["client_id"], payload) do
+        {:ok, balance, limit} ->
+          :cowboy_req.reply(200, %{
+            <<"content-type">> => <<"application/json">>
+        }, <<"{\"limite\":#{-1*limit},\"saldo\":#{balance}}">>, req)
+
+        {:unprocessable, _, _} ->
+          :cowboy_req.reply(422, req)
+      end
+
   end
 
   def handle_transaction(_, _, req) do
