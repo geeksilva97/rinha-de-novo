@@ -23,8 +23,8 @@ defmodule Rinha2.MixProject do
   defp deps do
     [
       {:cowboy, "~> 2.11.0"},
-      {:jiffy, "~> 1.1.1"},
-      # {:jiffy, git: "https://github.com/davisp/jiffy.git", tags: "1.1.1"}
+      # {:jiffy, "~> 1.1.1"},
+      {:jason, "~> 1.4"}
     ]
   end
 end

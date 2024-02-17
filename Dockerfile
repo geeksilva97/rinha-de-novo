@@ -5,7 +5,12 @@ ENV NODE_NAME $NODE_NAME
 
 WORKDIR /app
 
+RUN apk update \
+    && apk --no-cache --update add build-base 
+
 COPY . .
+
+RUN rm -rf _build
 
 RUN mix local.hex --force && \
     mix local.rebar --force && \
