@@ -20,14 +20,28 @@ defmodule Rinha2.Application do
       end}
     ]
 
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Rinha2.Supervisor]
-
 
     Logger.info("Starting application at node #{node()}")
 
+    start_web_interface()
+
     Supervisor.start_link(children, opts)
+  end
+
+  defp start_web_interface() do
+    Logger.info("starting web application")
+    dispatch = :cowboy_router.compile([
+      {:_, [
+        {"/clientes/:client_id/transacoes", Rinha2.Interface.TransactionsHandler, []},
+        {"/clientes/:client_id/extrato", Rinha2.Interface.SummaryHandler, []},
+      ]}
+    ])
+
+    {:ok, _} = :cowboy.start_clear(
+      :rinha2_listener,
+      [{:port, 8080}],
+      %{env: %{dispatch: dispatch}})
   end
 
   def bootstrap_node() do
