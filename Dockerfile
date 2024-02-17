@@ -18,5 +18,5 @@ RUN mix local.hex --force && \
 
 RUN mix compile
 
-# CMD elixir --sname $NODE_NAME --erl "+P 500000" --cookie supersecretcookie -S mix run --no-halt
-CMD elixir --sname $NODE_NAME --cookie supersecretcookie -S mix run --no-halt
+CMD elixir --sname $NODE_NAME --erl "+P 500000" --cookie supersecretcookie -S mix run --no-halt
+# CMD elixir --sname $NODE_NAME --cookie supersecretcookie -S mix run --no-halt

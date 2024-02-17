@@ -17,26 +17,9 @@ defmodule Rinha2.Application do
           _ ->
             Logger.info("Could not connect to #{bootstrap_node()}")
         end
-      end}
+      end},
+        Rinha2.ClientSupervisor
     ]
-
-    more_children = [
-      {1, -100000},
-      {2, -80000},
-      {3, -1000000},
-      {4, -10000000},
-      {5, -500000}]
-      |> then(fn arr ->
-        Process.sleep(1000)
-        arr
-      end)
-      |> Enum.filter(fn _ -> length(Node.list()) > 0 end)
-      |> Enum.map(fn {client_id, limit} ->
-        %{
-          id: Rinha2.Client.process_name(client_id),
-          start: {Rinha2.Client, :start_link, [{client_id, limit}]}
-        }
-      end)
 
     opts = [strategy: :one_for_one, name: Rinha2.Supervisor]
 
@@ -44,7 +27,7 @@ defmodule Rinha2.Application do
 
     start_web_interface()
 
-    Supervisor.start_link(children ++ more_children, opts)
+    Supervisor.start_link(children, opts)
   end
 
   defp start_web_interface() do
@@ -58,7 +41,7 @@ defmodule Rinha2.Application do
 
     {:ok, _} = :cowboy.start_clear(
       :rinha2_listener,
-      [{:port, 8080}, {:num_acceptors, 350}, {:max_connections, :infinity}],
+      [{:port, 8080}, {:num_acceptors, 350}, {:max_connections, 500}],
       %{env: %{dispatch: dispatch}})
   end
 
