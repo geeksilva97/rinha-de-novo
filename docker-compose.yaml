@@ -7,19 +7,25 @@ services:
         - NODE_NAME=diogenes
     container_name: api01
     hostname: api01
+    ulimits:
+      nproc: 1000000
+      nofile:
+        soft: 1000000
+        hard: 1000000
     ports:
       - "8080:8080"
-    # volumes:
-    #   - ./:/app
+    volumes:
+      - ./:/app
     environment:
       - NODE_NAME=diogenes
       - NODE_TYPE=master
       - BOOTSTRAP_NODE=alexander@api02
+      - ERL_MAX_PORTS=2048
     deploy:
       resources:
         limits:
-          cpus: '0.6'
-          memory: '200MB'
+          cpus: '0.5'
+          memory: '250MB'
 
   api02:
     <<: *api
@@ -27,11 +33,10 @@ services:
     hostname: api02
     ports:
       - "8081:8080"
-    # volumes:
-    #   - ./:/app
     environment:
       - NODE_NAME=alexander
       - BOOTSTRAP_NODE=diogenes@api01
+      - ERL_MAX_PORTS=2048
 
   nginx:
     image: nginx:latest
@@ -45,5 +50,5 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.3'
-          memory: '100MB'
+          cpus: '0.5'
+          memory: '50MB'
