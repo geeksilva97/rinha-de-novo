@@ -12,29 +12,59 @@ defmodule Rinha2.Interface.TransactionsHandler do
   defp handle_req(<<"POST">>, req) do
     {:ok, body, _req} = read_body(req, <<"">>)
 
-    Logger.info("Request body -> #{inspect(body)}")
+    client_id = :cowboy_req.binding(:client_id, req, <<"0">>) |> :erlang.binary_to_integer()
 
-    case Jason.decode(body) do
-      {:ok, payload = %{"tipo" => tipo}} ->
-        handle_transaction(tipo, payload, req)
+    case client_validations(client_id) do
+      :valid ->
+        case Jason.decode(body) do
+          {:ok, payload = %{"tipo" => tipo}} ->
+            Logger.info("payload :: #{inspect(payload)}")
+            validate_payload(payload, :handle_transaction, [tipo, payload |> Map.put("client_id", client_id), req], req)
+          _ ->
+            :cowboy_req.reply(422, req)
+        end
+
       _ ->
-        :cowboy_req.reply(400, req)
+        :cowboy_req.reply(404, req)
     end
   end
 
-  defp handle_transaction("c", payload, req) do
+  defp validate_payload(payload, fun, args, req) do
+    valor = payload["valor"] || 0
+    size_descricao = (payload["descricao"] || "") |> String.length()
+
+    if not is_float(valor) and valor > 0 and size_descricao > 0 and size_descricao < 11 do
+      apply(__MODULE__, fun, args)
+    else
+      :cowboy_req.reply(422, req)
+    end
+  end
+
+  defp client_validations(client_id) do
+    case client_id > 0 and client_id < 6 do
+      true ->
+        :valid
+      _ ->
+        :invalid
+    end
+  end
+
+  def handle_transaction("c", payload, req) do
+    Logger.info("handle_transaction is being valled")
+    {:ok, balance, limit} = Rinha2.Client.credit(payload["client_id"], payload)
+
+    :cowboy_req.reply(200, %{
+      <<"content-type">> => <<"application/json">>
+        }, <<"{\"limite\":#{-1*limit},\"saldo\":#{balance}}">>, req)
+  end
+
+  def handle_transaction("d", payload, req) do
     :cowboy_req.reply(200, %{
       <<"content-type">> => <<"application/json">>
         }, <<"{\"limite\":0,\"saldo\":0}">>, req)
   end
 
-  defp handle_transaction("d", payload, req) do
-    :cowboy_req.reply(200, %{
-      <<"content-type">> => <<"application/json">>
-        }, <<"{\"limite\":0,\"saldo\":0}">>, req)
-  end
-
-  defp handle_transaction(_, _, req) do
+  def handle_transaction(_, _, req) do
     :cowboy_req.reply(422, req)
   end
 

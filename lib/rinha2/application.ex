@@ -18,7 +18,17 @@ defmodule Rinha2.Application do
             Logger.info("Could not connect to #{bootstrap_node()}")
         end
       end}
-    ]
+    ] ++ [
+      {1, -100000},
+      {2, -80000},
+      {3, -1000000},
+      {4, -10000000},
+      {5, -500000}] |> Enum.map(fn {client_id, limit} ->
+        %{
+          id: Rinha2.Client.process_name(client_id),
+          start: {Rinha2.Client, :start_link, [{client_id, limit}]}
+        }
+      end)
 
     opts = [strategy: :one_for_one, name: Rinha2.Supervisor]
 
