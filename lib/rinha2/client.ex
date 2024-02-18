@@ -20,18 +20,18 @@ defmodule Rinha2.Client do
   end
 
   def credit(client_id, payload) do
-    GenServer.call(process_identifier(client_id), {:credit, client_id, payload})
+    GenServer.call(process_identifier(client_id), {:credit, payload})
   end
 
   def debit(client_id, payload) do
-    GenServer.call(process_identifier(client_id), {:debit, client_id, payload})
+    GenServer.call(process_identifier(client_id), {:debit, payload})
   end
 
   def summary(client_id) do
     GenServer.call(process_identifier(client_id), {:summary})
   end
 
-  def handle_call({:credit, _client_id, payload}, _from, {balance, limit, latest_txns}) do
+  def handle_call({:credit, payload}, _from, {balance, limit, latest_txns}) do
     transaction = payload_to_transaction(payload)
 
     new_list = case length(latest_txns) >= @amount_txns_to_keep do
@@ -44,7 +44,7 @@ defmodule Rinha2.Client do
     {:reply, {:ok, new_balance, limit}, {new_balance, limit, new_list}}
   end
 
-  def handle_call({:debit, _client_id, payload}, _from, state = {balance, limit, latest_txns}) do
+  def handle_call({:debit, payload}, _from, state = {balance, limit, latest_txns}) do
     new_balance = balance - payload["valor"]
 
     case new_balance < limit do

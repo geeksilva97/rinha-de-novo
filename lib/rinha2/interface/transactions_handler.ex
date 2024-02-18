@@ -1,4 +1,18 @@
 defmodule Rinha2.Interface.TransactionsHandler do
+
+  @blah %{
+    1 => true,
+    2 => true,
+    3 => true,
+    4 => true,
+    5 => true,
+    6 => true,
+    7 => true,
+    8 => true,
+    9 => true,
+    10 => true
+  }
+
   def init(req, options) do
     method = :cowboy_req.method(req)
 
@@ -8,12 +22,12 @@ defmodule Rinha2.Interface.TransactionsHandler do
   end
 
   defp handle_req(<<"POST">>, req) do
-    {:ok, body, _req} = read_body(req, <<"">>)
-
     client_id = :cowboy_req.binding(:client_id, req, <<"0">>) |> :erlang.binary_to_integer()
 
     case client_validations(client_id) do
       :valid ->
+        {:ok, body, _req} = read_body(req, <<"">>)
+
         case Jason.decode(body) do
           {:ok, payload = %{"tipo" => tipo}} ->
             validate_payload(payload, :handle_transaction, [tipo, payload |> Map.put("client_id", client_id), req], req)
@@ -27,10 +41,11 @@ defmodule Rinha2.Interface.TransactionsHandler do
   end
 
   defp validate_payload(payload, fun, args, req) do
-    valor = payload["valor"] || 0
+    valor = payload["valor"]
     size_descricao = (payload["descricao"] || "") |> String.length()
 
-    if not is_float(valor) and valor > 0 and size_descricao > 0 and size_descricao < 11 do
+    # if not is_float(valor) and valor > 0 and size_descricao > 0 and size_descricao < 11 do
+    if @blah[size_descricao] and not is_float(valor) and valor > 0 do
       apply(__MODULE__, fun, args)
     else
       :cowboy_req.reply(422, req)
@@ -55,7 +70,6 @@ defmodule Rinha2.Interface.TransactionsHandler do
   end
 
   def handle_transaction("d", payload, req) do
-
       case Rinha2.Client.debit(payload["client_id"], payload) do
         {:ok, balance, limit} ->
           :cowboy_req.reply(200, %{
