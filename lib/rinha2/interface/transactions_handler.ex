@@ -41,11 +41,10 @@ defmodule Rinha2.Interface.TransactionsHandler do
   end
 
   defp validate_payload(payload, fun, args, req) do
-    valor = payload["valor"]
+    valor = payload["valor"] || 0
     size_descricao = (payload["descricao"] || "") |> String.length()
 
-    # if not is_float(valor) and valor > 0 and size_descricao > 0 and size_descricao < 11 do
-    if @blah[size_descricao] and not is_float(valor) and valor > 0 do
+    if not is_float(valor) and size_descricao > 0 and size_descricao < 11 do
       apply(__MODULE__, fun, args)
     else
       :cowboy_req.reply(422, req)
