@@ -48,10 +48,20 @@ defmodule Rinha2.Application do
       ]}
     ])
 
-    {:ok, _} = :cowboy.start_clear(
+    {:ok, pid} = :cowboy.start_clear(
       :rinha2_listener,
       [{:port, 8080}, {:num_acceptors, 350}, {:max_connections, 500}],
       %{env: %{dispatch: dispatch}})
+
+    # :cprof.start()
+    # :eprof.start_profiling([self()], {Rinha2.Interface.SummaryHandler, :_, :_})
+
+    # spawn(fn ->
+    #   :timer.sleep(10_000)
+    #   Logger.info("Should display eprof analysis")
+    #   :eprof.stop_profiling()
+    #   :eprof.analyze()
+    # end)
   end
 
   def bootstrap_node() do

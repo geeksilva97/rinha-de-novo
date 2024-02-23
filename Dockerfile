@@ -14,6 +14,7 @@ RUN rm -rf _build
 
 RUN mix local.hex --force && \
     mix local.rebar --force && \
+    # mix clean && \
     mix deps.get
 
 RUN mix compile

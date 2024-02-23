@@ -11,7 +11,7 @@ pid = spawn(fn ->
 
   x = 1+1
 
-  :timer.sleep(1000)
+  # :timer.sleep(1000)
 
   send(parent, :finished)
 end)

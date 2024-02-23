@@ -1,22 +1,14 @@
 defmodule Rinha2.Interface.TransactionsHandler do
-
-  @blah %{
-    1 => true,
-    2 => true,
-    3 => true,
-    4 => true,
-    5 => true,
-    6 => true,
-    7 => true,
-    8 => true,
-    9 => true,
-    10 => true
-  }
-
   def init(req, options) do
     method = :cowboy_req.method(req)
 
+    # :eprof.start()
+    # :eprof.start_profiling([self()])
+
     req = handle_req(method, req)
+
+    # :eprof.stop_profiling()
+    # :eprof.analyze()
 
     {:ok, req, options}
   end
@@ -28,12 +20,21 @@ defmodule Rinha2.Interface.TransactionsHandler do
       :valid ->
         {:ok, body, _req} = read_body(req, <<"">>)
 
-        case Jason.decode(body) do
-          {:ok, payload = %{"tipo" => tipo}} ->
-            validate_payload(payload, :handle_transaction, [tipo, payload |> Map.put("client_id", client_id), req], req)
-          _ ->
+        try do
+          payload = :jiffy.decode(body, [:return_maps])
+
+          validate_payload(payload, :handle_transaction, [payload["tipo"], payload |> Map.put("client_id", client_id), req], req)
+        rescue
+          _e ->
             :cowboy_req.reply(422, req)
         end
+
+        # case Jason.decode(body) do
+        #   {:ok, payload = %{"tipo" => tipo}} ->
+        #     validate_payload(payload, :handle_transaction, [tipo, payload |> Map.put("client_id", client_id), req], req)
+        #   _ ->
+        #     :cowboy_req.reply(422, req)
+        # end
 
       _ ->
         :cowboy_req.reply(404, req)
@@ -44,7 +45,7 @@ defmodule Rinha2.Interface.TransactionsHandler do
     valor = payload["valor"] || 0
     size_descricao = (payload["descricao"] || "") |> String.length()
 
-    if not is_float(valor) and size_descricao > 0 and size_descricao < 11 do
+    unless is_float(valor) or valor <= 0 or size_descricao == 0 or size_descricao > 10 do
       apply(__MODULE__, fun, args)
     else
       :cowboy_req.reply(422, req)
@@ -52,7 +53,7 @@ defmodule Rinha2.Interface.TransactionsHandler do
   end
 
   defp client_validations(client_id) do
-    case client_id > 0 and client_id < 6 do
+    case client_id in 1..5 do
       true ->
         :valid
       _ ->
