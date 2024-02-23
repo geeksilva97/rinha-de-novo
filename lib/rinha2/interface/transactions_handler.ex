@@ -29,13 +29,6 @@ defmodule Rinha2.Interface.TransactionsHandler do
             :cowboy_req.reply(422, req)
         end
 
-        # case Jason.decode(body) do
-        #   {:ok, payload = %{"tipo" => tipo}} ->
-        #     validate_payload(payload, :handle_transaction, [tipo, payload |> Map.put("client_id", client_id), req], req)
-        #   _ ->
-        #     :cowboy_req.reply(422, req)
-        # end
-
       _ ->
         :cowboy_req.reply(404, req)
     end

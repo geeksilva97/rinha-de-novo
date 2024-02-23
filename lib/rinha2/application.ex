@@ -7,15 +7,6 @@ defmodule Rinha2.Application do
 
   @impl true
   def start(_type, _args) do
-    # :fprof.trace([:start, verbose: true, procs: :all])
-
-    # spawn fn ->
-    #   :timer.sleep(10_000)
-    #   :fprof.trace(:stop)
-    #   :fprof.profile()
-    #   :fprof.analyse(totals: false, dest: 'prof.analysis')
-    # end
-
     children = [
       {Task, fn ->
         Logger.info("#{node()} attempting to connect to #{bootstrap_node()}")
@@ -48,20 +39,10 @@ defmodule Rinha2.Application do
       ]}
     ])
 
-    {:ok, pid} = :cowboy.start_clear(
+    {:ok, _} = :cowboy.start_clear(
       :rinha2_listener,
       [{:port, 8080}, {:num_acceptors, 350}, {:max_connections, 500}],
       %{env: %{dispatch: dispatch}})
-
-    # :cprof.start()
-    # :eprof.start_profiling([self()], {Rinha2.Interface.SummaryHandler, :_, :_})
-
-    # spawn(fn ->
-    #   :timer.sleep(10_000)
-    #   Logger.info("Should display eprof analysis")
-    #   :eprof.stop_profiling()
-    #   :eprof.analyze()
-    # end)
   end
 
   def bootstrap_node() do
