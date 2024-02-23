@@ -2,13 +2,7 @@ defmodule Rinha2.Interface.TransactionsHandler do
   def init(req, options) do
     method = :cowboy_req.method(req)
 
-    # :eprof.start()
-    # :eprof.start_profiling([self()])
-
     req = handle_req(method, req)
-
-    # :eprof.stop_profiling()
-    # :eprof.analyze()
 
     {:ok, req, options}
   end

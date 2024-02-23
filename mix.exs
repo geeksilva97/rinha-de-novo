@@ -15,6 +15,7 @@ defmodule Rinha2.MixProject do
   # https://elixirforum.com/t/distillery-staging-release-does-not-bundling-fprof/7472/3
   def application do
     [
+      # extra_applications: [:logger, :tools, :runtime_tools],
       extra_applications: [:logger],
       mod: {Rinha2.Application, []}
     ]
