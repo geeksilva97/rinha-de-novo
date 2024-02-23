@@ -14,7 +14,8 @@ defmodule Rinha2.Interface.SummaryHandler do
 
     case client_id > 0 and client_id < 6 do
       true ->
-        {:ok, balance, limit, latest_txns} = Rinha2.Client.summary(client_id)
+        # {:ok, balance, limit, latest_txns} = Rinha2.Client.summary(client_id)
+        {:ok, balance, limit, latest_txns} = Rinha2.ClientReplica.summary(client_id)
 
         encoded_result = :jiffy.encode(%{
           <<"ultimas_transacoes">> => latest_txns,

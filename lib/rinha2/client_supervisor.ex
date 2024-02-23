@@ -15,11 +15,17 @@ defmodule Rinha2.ClientSupervisor do
       {3, -1000000},
       {4, -10000000},
       {5, -500000}]
-      |> Enum.map(fn {client_id, limit} -> 
-        %{
-          id: Rinha2.Client.process_name(client_id),
-          start: {Rinha2.Client, :start_link, [{client_id, limit}]}
-        }
+      |> Enum.flat_map(fn {client_id, limit} -> 
+        [
+          %{
+            id: Rinha2.Client.process_name(client_id),
+            start: {Rinha2.Client, :start_link, [{client_id, limit}]}
+          },
+          %{
+            id: Rinha2.ClientReplica.process_name(client_id),
+            start: {Rinha2.ClientReplica, :start_link, [{client_id, limit}]}
+          }
+        ]
       end)
 
     Supervisor.init(children, strategy: :one_for_one)
