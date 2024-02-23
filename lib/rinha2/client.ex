@@ -66,7 +66,7 @@ defmodule Rinha2.Client do
   end
 
   defp payload_to_transaction(payload) do
-    Map.delete(payload, "client_id")
+    payload
     |> Map.put("realizada_em", "#{DateTime.utc_now()}")
   end
 
