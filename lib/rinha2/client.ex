@@ -67,7 +67,7 @@ defmodule Rinha2.Client do
 
   defp payload_to_transaction(payload) do
     payload
-    |> Map.put("realizada_em", "#{DateTime.utc_now()}")
+    |> Map.put(<<"realizada_em">>, "#{DateTime.utc_now()}")
   end
 
   def process_name(client_id), do: :"client#{client_id}"
