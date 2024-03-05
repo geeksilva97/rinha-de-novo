@@ -37,6 +37,7 @@ services:
       - NODE_NAME=alexander
       - BOOTSTRAP_NODE=diogenes@api01
       - ERL_MAX_PORTS=2048
+      - NODE_TYPE=slave
 
   nginx:
     image: nginx:latest

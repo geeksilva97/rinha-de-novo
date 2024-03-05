@@ -15,7 +15,7 @@ defmodule Rinha2.Client do
 
   @spec init({client_id :: integer(), limit :: integer()}) :: {:ok, {balance :: integer(), limit :: integer(), latest_txns :: list()}}
   def init({client_id, limit}) do
-    Logger.info("start client #{inspect(process_identifier(client_id))} | #{inspect(node())} - #{inspect(Node.list())}")
+    Logger.info("start client #{inspect(process_identifier(client_id))} | #{inspect(node())}")
     {:ok, {0, limit, []}}
   end
 

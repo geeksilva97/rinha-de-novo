@@ -3,7 +3,20 @@ defmodule Rinha2.Application do
 
   require Logger
 
+  alias :mnesia, as: Mnesia
+
   use Application
+
+  def create_schemas() do
+    Logger.info("creating schemas")
+
+    # :rpc.multicall(:mnesia, :set_debug_level, [:trace])
+    :rpc.multicall(:mnesia, :stop, [])
+
+    :ok = Mnesia.create_schema([node() | Node.list()])
+
+    :rpc.multicall(:mnesia, :start, [])
+  end
 
   @impl true
   def start(_type, _args) do
@@ -13,7 +26,14 @@ defmodule Rinha2.Application do
 
         case Node.connect(bootstrap_node()) do
           true ->
-            Logger.info("Connection succeeded. We are a cluster")
+            node_type = System.get_env("NODE_TYPE", nil)
+
+            Logger.info("Connection succeeded. We are a cluster :: node type -> #{node_type}")
+            if node_type == "master" do
+              create_schemas()
+              Mnesia.info()
+            end
+
           _ ->
             Logger.info("Could not connect to #{bootstrap_node()}")
             raise "could not get into a cluster"

@@ -8,7 +8,6 @@ defmodule Rinha2.ClientSupervisor do
   end
 
   def init(_) do
-    Logger.info("Starting client supervisor")
     children = [
       {1, -100000},
       {2, -80000},
