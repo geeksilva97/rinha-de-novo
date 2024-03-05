@@ -12,7 +12,10 @@ defmodule Rinha2.Application do
 
     :rpc.multicall(:mnesia, :stop, [])
 
-    :ok = Mnesia.create_schema([node() | Node.list()])
+    :ok = case Mnesia.create_schema([node() | Node.list()]) do
+      :ok -> :ok
+      {:error, {_, {:already_exists, _}}} -> :ok
+    end
 
     :rpc.multicall(:mnesia, :start, [])
 
