@@ -23,7 +23,7 @@ defmodule Rinha2.ClientSupervisor do
 
     @client_data
     |> Enum.map(fn {client_id, limit} -> 
-      :ok = case Mnesia.create_table(:"event_log_client#{client_id}", [attributes: [:event_id, :version, :event_data], type: :bag, disc_copies: nodes]) do
+      :ok = case Mnesia.create_table(:"event_log_client#{client_id}", [attributes: [:event_id, :version, :event_data], type: :ordered_set, disc_copies: nodes]) do
         {:atomic, :ok} -> :ok
         {:aborted, {:already_exists, _}} -> :ok
         other -> other
