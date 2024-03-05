@@ -28,6 +28,8 @@ defmodule Rinha2.Application do
     folder_name = node() |> Atom.to_charlist()
     Application.put_env(:mnesia, :dir, '/app/mnesia-data/#{folder_name}')
 
+    # :mnesia.dirty_match_object({Table, :_, :_})
+
     children = [
       {Task, fn ->
         Logger.info("#{node()} attempting to connect to #{bootstrap_node()}")
@@ -40,6 +42,10 @@ defmodule Rinha2.Application do
             if node_type == "master" do
               create_schemas()
               Mnesia.info()
+
+              1..5 |> Enum.map(fn client_id -> 
+                Rinha2.Client.process_events(client_id)
+              end)
             end
 
           _ ->

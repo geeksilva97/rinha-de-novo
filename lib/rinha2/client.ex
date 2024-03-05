@@ -22,6 +22,12 @@ defmodule Rinha2.Client do
     {:ok, {0, limit, [], :"event_log_client#{client_id}"}}
   end
 
+  def process_events(client_id) do
+    Logger.info("Gotta process events")
+
+    GenServer.cast(process_identifier(client_id), {:process_events})
+  end
+
   def credit(client_id, payload) do
     GenServer.call(process_identifier(client_id), {:credit, payload})
   end
@@ -69,6 +75,38 @@ defmodule Rinha2.Client do
 
   def handle_call({:summary}, _from, state = {balance, limit, latest_txns, _table}) do
     {:reply, {:ok, balance, limit, latest_txns}, state}
+  end
+
+  def handle_cast({:process_events}, state = {_balance, limit, _txns, table}) do
+    Logger.info("Processing events for table #{inspect(table)}")
+    :yes = Mnesia.force_load_table(table)
+
+    table_info = Mnesia.table_info(table, :all)
+
+    Logger.info("Table info #{inspect(table_info)}")
+
+    events = Mnesia.dirty_match_object({ table, :_, :_, :_ })
+
+    {computed_balance, computed_txns} = events |> Enum.reduce({0, []}, fn {_table_name, _event_id, _event_version, event_payload}, acc = {current_balance, txns} ->
+      %{ "valor" => valor, "tipo" => tipo, "descricao" => descricao } = event_payload
+
+      transaction = payload_to_transaction(event_payload)
+      new_list = case length(txns) >= @amount_txns_to_keep do
+        true -> [transaction | txns] |> List.delete_at(-1)
+        _ -> [transaction | txns]
+      end
+
+      new_balance = case tipo do
+        "d" -> current_balance - valor
+        "c" -> current_balance + valor
+      end
+
+      {new_balance, []}
+    end)
+
+    Logger.info("computed -- balance #{computed_balance} | txns #{inspect(computed_txns)}")
+
+    {:noreply, { computed_balance, limit, computed_txns, table }}
   end
 
   defp payload_to_transaction(payload) do
