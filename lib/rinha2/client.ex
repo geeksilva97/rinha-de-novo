@@ -23,7 +23,7 @@ defmodule Rinha2.Client do
   end
 
   def process_events(client_id) do
-    Logger.info("Gotta process events")
+    Logger.info("Gotta Process events for client #{client_id}")
 
     GenServer.cast(process_identifier(client_id), {:process_events})
   end
@@ -41,8 +41,9 @@ defmodule Rinha2.Client do
   end
 
   def handle_call({:credit, payload}, _from, {balance, limit, latest_txns, table}) do
-    :ok = Mnesia.dirty_write({table, make_ref(), 1, payload})
     transaction = payload_to_transaction(payload)
+
+    :ok = Mnesia.dirty_write({table, make_ref(), 1, transaction})
 
     new_list = case length(latest_txns) >= @amount_txns_to_keep do
       true -> [transaction | latest_txns] |> List.delete_at(-1)
@@ -61,9 +62,10 @@ defmodule Rinha2.Client do
       true ->
         {:reply, {:unprocessable, balance, limit}, state}
       _ -> 
-        :ok = Mnesia.dirty_write({table, make_ref(), 1, payload})
-
         transaction = payload_to_transaction(payload)
+
+        :ok = Mnesia.dirty_write({table, make_ref(), 1, transaction})
+
         new_list = case length(latest_txns) >= @amount_txns_to_keep do
           true -> [transaction | latest_txns] |> List.delete_at(-1)
           _ -> [transaction | latest_txns]
@@ -79,21 +81,19 @@ defmodule Rinha2.Client do
 
   def handle_cast({:process_events}, state = {_balance, limit, _txns, table}) do
     Logger.info("Processing events for table #{inspect(table)}")
+
     :yes = Mnesia.force_load_table(table)
-
-    table_info = Mnesia.table_info(table, :all)
-
-    Logger.info("Table info #{inspect(table_info)}")
 
     events = Mnesia.dirty_match_object({ table, :_, :_, :_ })
 
-    {computed_balance, computed_txns} = events |> Enum.reduce({0, []}, fn {_table_name, _event_id, _event_version, event_payload}, acc = {current_balance, txns} ->
-      %{ "valor" => valor, "tipo" => tipo, "descricao" => descricao } = event_payload
+    Logger.info("Events #{inspect(events)}")
 
-      transaction = payload_to_transaction(event_payload)
+    {computed_balance, computed_txns} = events |> Enum.reduce({0, []}, fn {_table_name, _event_id, _event_version, event_payload}, acc = {current_balance, txns} ->
+      %{ "valor" => valor, "tipo" => tipo } = event_payload
+
       new_list = case length(txns) >= @amount_txns_to_keep do
-        true -> [transaction | txns] |> List.delete_at(-1)
-        _ -> [transaction | txns]
+        true -> [event_payload | txns] |> List.delete_at(-1)
+        _ -> [event_payload | txns]
       end
 
       new_balance = case tipo do
@@ -101,10 +101,10 @@ defmodule Rinha2.Client do
         "c" -> current_balance + valor
       end
 
-      {new_balance, []}
+      {new_balance, new_list}
     end)
 
-    Logger.info("computed -- balance #{computed_balance} | txns #{inspect(computed_txns)}")
+    Logger.info("computed #{inspect(table)} -- balance #{computed_balance} | txns #{inspect(computed_txns)}")
 
     {:noreply, { computed_balance, limit, computed_txns, table }}
   end
