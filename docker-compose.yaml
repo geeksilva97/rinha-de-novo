@@ -14,10 +14,6 @@ services:
         hard: 1000000
     ports:
       - "8080:8080"
-    # command: elixir --sname $NODE_NAME --erl "+P 500000" --cookie supersecretcookie -S mix run --no-halt
-
-    # volumes:
-    #   - ./:/app
     environment:
       - NODE_NAME=diogenes
       - NODE_TYPE=slave
