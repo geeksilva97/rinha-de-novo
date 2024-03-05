@@ -14,6 +14,8 @@ services:
         hard: 1000000
     ports:
       - "8080:8080"
+    # command: elixir --sname $NODE_NAME --erl "+P 500000" --cookie supersecretcookie -S mix run --no-halt
+
     # volumes:
     #   - ./:/app
     environment:
@@ -21,6 +23,11 @@ services:
       - NODE_TYPE=slave
       - BOOTSTRAP_NODE=alexander@api02
       - ERL_MAX_PORTS=2048
+      - RELEASE_DISTRIBUTION=sname
+      - RELEASE_NODE=diogenes@api01
+      - RELEASE_COOKIE=somecookie
+    command: /app/_build/PROD/rel/rinha2/bin/rinha2 start
+    # command: sleep infinity
     deploy:
       resources:
         limits:
@@ -40,6 +47,9 @@ services:
       - BOOTSTRAP_NODE=diogenes@api01
       - ERL_MAX_PORTS=2048
       - NODE_TYPE=master
+      - RELEASE_DISTRIBUTION=sname
+      - RELEASE_NODE=alexander@api02
+      - RELEASE_COOKIE=somecookie
 
   nginx:
     image: nginx:latest

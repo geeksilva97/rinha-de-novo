@@ -17,7 +17,11 @@ RUN mix local.hex --force && \
     # mix clean && \
     mix deps.get
 
-RUN mix compile
+# RUN mix compile
 
-CMD elixir --sname $NODE_NAME --erl "+P 500000" --cookie supersecretcookie -S mix run --no-halt
-# CMD elixir --sname $NODE_NAME --cookie supersecretcookie -S mix run --no-halt
+ENV MIX_ENV PROD
+RUN mix release
+
+# CMD ./_build/PROD/rel/rinha2 start
+
+# CMD elixir --sname $NODE_NAME --erl "+P 500000" --cookie supersecretcookie -S mix run --no-halt

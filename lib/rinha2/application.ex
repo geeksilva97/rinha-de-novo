@@ -27,20 +27,23 @@ defmodule Rinha2.Application do
     children = [
       {Task, fn ->
         Logger.info("#{node()} attempting to connect to #{bootstrap_node()}")
+        node_type = System.get_env("NODE_TYPE", nil)
 
         case Node.connect(bootstrap_node()) do
           true ->
-            node_type = System.get_env("NODE_TYPE", nil)
-
             Logger.info("Connection succeeded. We are a cluster :: node type -> #{node_type}")
+
             if node_type == "master" do
               create_schemas()
               Mnesia.info()
             end
 
           _ ->
-            Logger.info("Could not connect to #{bootstrap_node()}")
-            raise "could not get into a cluster"
+            if node_type == "master" do
+              Logger.error("Could not connect to #{bootstrap_node()}")
+
+              System.stop(1)
+            end
         end
       end},
         Rinha2.ClientSupervisor
@@ -56,7 +59,7 @@ defmodule Rinha2.Application do
   end
 
   defp start_web_interface() do
-    Logger.info("starting web application")
+    Logger.info("starting web interface")
     dispatch = :cowboy_router.compile([
       {:_, [
         {"/clientes/:client_id/transacoes", Rinha2.Interface.TransactionsHandler, []},
