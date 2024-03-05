@@ -20,8 +20,6 @@ defmodule Rinha2.Application do
     :rpc.multicall(:mnesia, :start, [])
 
     Rinha2.ClientSupervisor.create_tables()
-
-    # :rpc.call(node(), Rinha2.ClientSupervisor, :create_tables, [])
   end
 
   @impl true
