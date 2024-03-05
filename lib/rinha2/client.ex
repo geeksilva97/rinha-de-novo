@@ -3,6 +3,8 @@ defmodule Rinha2.Client do
 
   require Logger
 
+  alias :mnesia, as: Mnesia
+
   @amount_txns_to_keep 10
 
   def start_link({client_id, limit}) do
@@ -20,10 +22,12 @@ defmodule Rinha2.Client do
   end
 
   def credit(client_id, payload) do
+    :ok = Mnesia.dirty_write({:"event_log_client#{client_id}", make_ref(), 1, payload})
     GenServer.call(process_identifier(client_id), {:credit, payload})
   end
 
   def debit(client_id, payload) do
+    :ok = Mnesia.dirty_write({:"event_log_client#{client_id}", make_ref(), 1, payload})
     GenServer.call(process_identifier(client_id), {:debit, payload})
   end
 
