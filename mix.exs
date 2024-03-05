@@ -26,7 +26,7 @@ defmodule Rinha2.MixProject do
     [
       {:cowboy, "~> 2.11.0"},
       {:jiffy, "~> 1.1.1"},
-      {:jason, "~> 1.4"}
+      # {:jason, "~> 1.4"}
     ]
   end
 end
