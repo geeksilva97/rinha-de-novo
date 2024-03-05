@@ -15,6 +15,7 @@ defmodule Rinha2.Application do
     :ok = case Mnesia.create_schema([node() | Node.list()]) do
       :ok -> :ok
       {:error, {_, {:already_exists, _}}} -> :ok
+      other -> other
     end
 
     :rpc.multicall(:mnesia, :start, [])
@@ -24,6 +25,9 @@ defmodule Rinha2.Application do
 
   @impl true
   def start(_type, _args) do
+    folder_name = node() |> Atom.to_charlist()
+    Application.put_env(:mnesia, :dir, '/app/mnesia-data/#{folder_name}')
+
     children = [
       {Task, fn ->
         Logger.info("#{node()} attempting to connect to #{bootstrap_node()}")
