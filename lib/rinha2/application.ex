@@ -64,6 +64,7 @@ defmodule Rinha2.Application do
       {:_, [
         {"/clientes/:client_id/transacoes", Rinha2.Interface.TransactionsHandler, []},
         {"/clientes/:client_id/extrato", Rinha2.Interface.SummaryHandler, []},
+        {"/info", Rinha2.Interface.InfoHandler, []},
       ]}
     ])
 
