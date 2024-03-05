@@ -16,6 +16,7 @@ defmodule Rinha2.Application do
             Logger.info("Connection succeeded. We are a cluster")
           _ ->
             Logger.info("Could not connect to #{bootstrap_node()}")
+            raise "could not get into a cluster"
         end
       end},
         Rinha2.ClientSupervisor
