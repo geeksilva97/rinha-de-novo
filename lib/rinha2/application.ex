@@ -8,14 +8,17 @@ defmodule Rinha2.Application do
   use Application
 
   def create_schemas() do
-    Logger.info("creating schemas")
+    Logger.info("creating schemas in cluster -- #{inspect([node() | Node.list()])}")
 
-    # :rpc.multicall(:mnesia, :set_debug_level, [:trace])
     :rpc.multicall(:mnesia, :stop, [])
 
     :ok = Mnesia.create_schema([node() | Node.list()])
 
     :rpc.multicall(:mnesia, :start, [])
+
+    Rinha2.ClientSupervisor.create_tables()
+
+    # :rpc.call(node(), Rinha2.ClientSupervisor, :create_tables, [])
   end
 
   @impl true
