@@ -1,10 +1,7 @@
 version: "3"
 services:
   api01: &api
-    build:
-      context: .
-      args:
-        - NODE_NAME=diogenes
+    image: codesilva/rinha-de-backend:0.1.0
     container_name: api01
     hostname: api01
     ulimits:
@@ -16,6 +13,7 @@ services:
       - "8080:8080"
     volumes:
       - ./tmp/mnesia-data:/app/mnesia-data
+      # - mnesia-volume:/app/mnesia-data
     environment:
       - NODE_NAME=diogenes
       - NODE_TYPE=slave
@@ -63,3 +61,5 @@ services:
         limits:
           cpus: '0.3'
           memory: '50MB'
+# volumes:
+#   mnesia-volume:

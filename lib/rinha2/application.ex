@@ -28,8 +28,6 @@ defmodule Rinha2.Application do
     folder_name = node() |> Atom.to_charlist()
     Application.put_env(:mnesia, :dir, '/app/mnesia-data/#{folder_name}')
 
-    # :mnesia.dirty_match_object({Table, :_, :_})
-
     children = [
       {Task, fn ->
         Logger.info("#{node()} attempting to connect to #{bootstrap_node()}")
