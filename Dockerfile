@@ -8,20 +8,15 @@ WORKDIR /app
 RUN apk update \
     && apk --no-cache --update add build-base 
 
-COPY . .
+COPY lib ./lib
+COPY mix.exs ./mix.exs
 
 RUN rm -rf _build
 
 RUN mix local.hex --force && \
     mix local.rebar --force && \
-    # mix clean && \
     mix deps.get
-
-# RUN mix compile
 
 ENV MIX_ENV PROD
 RUN mix release
 
-# CMD ./_build/PROD/rel/rinha2 start
-
-# CMD elixir --sname $NODE_NAME --erl "+P 500000" --cookie supersecretcookie -S mix run --no-halt
