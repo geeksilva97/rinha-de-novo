@@ -12,9 +12,11 @@ defmodule Rinha2.MixProject do
   end
 
   # Run "mix help compile.app" to learn about applications.
+  # https://elixirforum.com/t/distillery-staging-release-does-not-bundling-fprof/7472/3
   def application do
     [
-      extra_applications: [:logger],
+      # extra_applications: [:logger, :tools, :runtime_tools],
+      extra_applications: [:logger, :mnesia],
       mod: {Rinha2.Application, []}
     ]
   end
@@ -23,8 +25,7 @@ defmodule Rinha2.MixProject do
   defp deps do
     [
       {:cowboy, "~> 2.11.0"},
-      # {:jiffy, "~> 1.1.1"},
-      {:jason, "~> 1.4"}
+      {:jiffy, "~> 1.1.1"},
     ]
   end
 end

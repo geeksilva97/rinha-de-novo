@@ -3,6 +3,8 @@ defmodule Rinha2.Client do
 
   require Logger
 
+  alias :mnesia, as: Mnesia
+
   @amount_txns_to_keep 10
 
   def start_link({client_id, limit}) do
@@ -15,8 +17,15 @@ defmodule Rinha2.Client do
 
   @spec init({client_id :: integer(), limit :: integer()}) :: {:ok, {balance :: integer(), limit :: integer(), latest_txns :: list()}}
   def init({client_id, limit}) do
-    Logger.info("start client #{inspect(process_identifier(client_id))} | #{inspect(node())} - #{inspect(Node.list())}")
-    {:ok, {0, limit, []}}
+    Logger.info("start client #{inspect(process_identifier(client_id))} | #{inspect(node())}")
+
+    {:ok, {0, limit, [], :"event_log_client#{client_id}"}}
+  end
+
+  def process_events(client_id) do
+    Logger.info("Gotta process events")
+
+    GenServer.cast(process_identifier(client_id), {:process_events})
   end
 
   def credit(client_id, payload) do
@@ -31,7 +40,8 @@ defmodule Rinha2.Client do
     GenServer.call(process_identifier(client_id), {:summary})
   end
 
-  def handle_call({:credit, payload}, _from, {balance, limit, latest_txns}) do
+  def handle_call({:credit, payload}, _from, {balance, limit, latest_txns, table}) do
+    :ok = Mnesia.dirty_write({table, make_ref(), 1, payload})
     transaction = payload_to_transaction(payload)
 
     new_list = case length(latest_txns) >= @amount_txns_to_keep do
@@ -41,33 +51,67 @@ defmodule Rinha2.Client do
 
     new_balance = balance + transaction["valor"]
 
-    {:reply, {:ok, new_balance, limit}, {new_balance, limit, new_list}}
+    {:reply, {:ok, new_balance, limit}, {new_balance, limit, new_list, table}}
   end
 
-  def handle_call({:debit, payload}, _from, state = {balance, limit, latest_txns}) do
+  def handle_call({:debit, payload}, _from, state = {balance, limit, latest_txns, table}) do
     new_balance = balance - payload["valor"]
 
     case new_balance < limit do
       true ->
         {:reply, {:unprocessable, balance, limit}, state}
       _ -> 
+        :ok = Mnesia.dirty_write({table, make_ref(), 1, payload})
+
         transaction = payload_to_transaction(payload)
         new_list = case length(latest_txns) >= @amount_txns_to_keep do
           true -> [transaction | latest_txns] |> List.delete_at(-1)
           _ -> [transaction | latest_txns]
         end
 
-        {:reply, {:ok, new_balance, limit}, {new_balance, limit, new_list}}
+        {:reply, {:ok, new_balance, limit}, {new_balance, limit, new_list, table}}
     end
   end
 
-  def handle_call({:summary}, _from, state = {balance, limit, latest_txns}) do
+  def handle_call({:summary}, _from, state = {balance, limit, latest_txns, _table}) do
     {:reply, {:ok, balance, limit, latest_txns}, state}
   end
 
+  def handle_cast({:process_events}, state = {_balance, limit, _txns, table}) do
+    Logger.info("Processing events for table #{inspect(table)}")
+    :yes = Mnesia.force_load_table(table)
+
+    table_info = Mnesia.table_info(table, :all)
+
+    Logger.info("Table info #{inspect(table_info)}")
+
+    events = Mnesia.dirty_match_object({ table, :_, :_, :_ })
+
+    {computed_balance, computed_txns} = events |> Enum.reduce({0, []}, fn {_table_name, _event_id, _event_version, event_payload}, acc = {current_balance, txns} ->
+      %{ "valor" => valor, "tipo" => tipo, "descricao" => descricao } = event_payload
+
+      transaction = payload_to_transaction(event_payload)
+      new_list = case length(txns) >= @amount_txns_to_keep do
+        true -> [transaction | txns] |> List.delete_at(-1)
+        _ -> [transaction | txns]
+      end
+
+      new_balance = case tipo do
+        "d" -> current_balance - valor
+        "c" -> current_balance + valor
+      end
+
+      {new_balance, []}
+    end)
+
+    Logger.info("computed -- balance #{computed_balance} | txns #{inspect(computed_txns)}")
+
+    {:noreply, { computed_balance, limit, computed_txns, table }}
+  end
+
   defp payload_to_transaction(payload) do
-    Map.delete(payload, "client_id")
-    |> Map.put("realizada_em", DateTime.utc_now())
+    payload
+    |> Map.put(<<"realizada_em">>, "#{DateTime.utc_now()}")
   end
 
   def process_name(client_id), do: :"client#{client_id}"

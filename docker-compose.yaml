@@ -14,29 +14,40 @@ services:
         hard: 1000000
     ports:
       - "8080:8080"
-    # volumes:
-    #   - ./:/app
+    volumes:
+      - ./tmp/mnesia-data:/app/mnesia-data
     environment:
       - NODE_NAME=diogenes
-      - NODE_TYPE=master
+      - NODE_TYPE=slave
       - BOOTSTRAP_NODE=alexander@api02
       - ERL_MAX_PORTS=2048
+      - RELEASE_DISTRIBUTION=sname
+      - RELEASE_NODE=diogenes@api01
+      - RELEASE_COOKIE=somecookie
+    command: /app/_build/PROD/rel/rinha2/bin/rinha2 start
+    # command: sleep infinity
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '0.6'
           memory: '250MB'
 
   api02:
     <<: *api
     container_name: api02
     hostname: api02
+    depends_on:
+      - api01
     ports:
       - "8081:8080"
     environment:
       - NODE_NAME=alexander
       - BOOTSTRAP_NODE=diogenes@api01
       - ERL_MAX_PORTS=2048
+      - NODE_TYPE=master
+      - RELEASE_DISTRIBUTION=sname
+      - RELEASE_NODE=alexander@api02
+      - RELEASE_COOKIE=somecookie
 
   nginx:
     image: nginx:latest
@@ -50,5 +61,5 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '0.3'
           memory: '50MB'

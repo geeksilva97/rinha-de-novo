@@ -1,18 +1,4 @@
 defmodule Rinha2.Interface.TransactionsHandler do
-
-  @blah %{
-    1 => true,
-    2 => true,
-    3 => true,
-    4 => true,
-    5 => true,
-    6 => true,
-    7 => true,
-    8 => true,
-    9 => true,
-    10 => true
-  }
-
   def init(req, options) do
     method = :cowboy_req.method(req)
 
@@ -28,10 +14,17 @@ defmodule Rinha2.Interface.TransactionsHandler do
       :valid ->
         {:ok, body, _req} = read_body(req, <<"">>)
 
-        case Jason.decode(body) do
-          {:ok, payload = %{"tipo" => tipo}} ->
-            validate_payload(payload, :handle_transaction, [tipo, payload |> Map.put("client_id", client_id), req], req)
-          _ ->
+        try do
+          payload = :jiffy.decode(body, [:return_maps])
+
+          case validate_payload(payload) do
+            :invalid ->
+              :cowboy_req.reply(422, req)
+            :valid ->
+              handle_transaction(payload["tipo"], client_id, payload, req)
+          end
+        rescue
+          _e ->
             :cowboy_req.reply(422, req)
         end
 
@@ -40,19 +33,19 @@ defmodule Rinha2.Interface.TransactionsHandler do
     end
   end
 
-  defp validate_payload(payload, fun, args, req) do
+  defp validate_payload(payload) do
     valor = payload["valor"] || 0
     size_descricao = (payload["descricao"] || "") |> String.length()
 
-    if not is_float(valor) and size_descricao > 0 and size_descricao < 11 do
-      apply(__MODULE__, fun, args)
+    if not is_integer(valor) or valor <= 0 or size_descricao < 1 or size_descricao > 10 do
+      :invalid
     else
-      :cowboy_req.reply(422, req)
+      :valid
     end
   end
 
   defp client_validations(client_id) do
-    case client_id > 0 and client_id < 6 do
+    case client_id in 1..5 do
       true ->
         :valid
       _ ->
@@ -60,16 +53,16 @@ defmodule Rinha2.Interface.TransactionsHandler do
     end
   end
 
-  def handle_transaction("c", payload, req) do
-    {:ok, balance, limit} = Rinha2.Client.credit(payload["client_id"], payload)
+  def handle_transaction("c", client_id, payload, req) do
+    {:ok, balance, limit} = Rinha2.Client.credit(client_id, payload)
 
     :cowboy_req.reply(200, %{
       <<"content-type">> => <<"application/json">>
         }, <<"{\"limite\":#{-1*limit},\"saldo\":#{balance}}">>, req)
   end
 
-  def handle_transaction("d", payload, req) do
-      case Rinha2.Client.debit(payload["client_id"], payload) do
+  def handle_transaction("d", client_id, payload, req) do
+      case Rinha2.Client.debit(client_id, payload) do
         {:ok, balance, limit} ->
           :cowboy_req.reply(200, %{
             <<"content-type">> => <<"application/json">>
