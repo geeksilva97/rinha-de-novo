@@ -1,7 +1,7 @@
 version: "3"
 services:
   api01: &api
-    image: codesilva/rinha-de-backend:0.1.0
+    image: codesilva/rinha-de-backend:0.2.0
     container_name: api01
     hostname: api01
     ulimits:
